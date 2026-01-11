@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import authService from '../services/authService';
+import authService from '../services/authService.js';
 import axios from 'axios';
 import CardSwap, { Card } from '../components/CardSwap/CardSwap';
 
@@ -64,7 +64,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
     setSuccess('');
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/otp/send', {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/otp/send`, {
         email,
         password,
         name: name || email.split('@')[0]
@@ -89,7 +89,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
     setError('');
     setOtpLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/otp/verify', {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/otp/verify`, {
         email,
         otp: otpCode
       });
@@ -116,7 +116,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
     setSuccess('');
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/otp/resend', { email });
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/otp/resend`, { email });
       if (response.data.success) {
         setSuccess('New OTP sent to your email!');
         setOtp(['', '', '', '', '', '']);
@@ -153,7 +153,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
 
   const handleGoogleLogin = async (response: any) => {
     try {
-      const result = await axios.post('http://localhost:5000/api/auth/google/callback', {
+      const result = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/google/callback`, {
         credential: response.credential
       });
       if (result.data.success) {

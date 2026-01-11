@@ -178,7 +178,7 @@ class NotesService {
 
   getNotePDFUrl(id: string): string {
     const token = localStorage.getItem('token');
-    return `http://localhost:5000/api/viewer/note/${id}?token=${token}`;
+    return `${import.meta.env.VITE_API_URL}/api/viewer/note/${id}?token=${token}`;
   }
 
   async getAccessibleNotes(): Promise<Note[]> {

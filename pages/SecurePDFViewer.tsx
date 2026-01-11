@@ -165,12 +165,12 @@ startxref
 
       if (noteData.price === 0) {
         setHasAccess(true);
-        setPdfUrl(`http://localhost:5000/api/viewer/note/${id}?token=${token}`);
+        setPdfUrl(`${import.meta.env.VITE_API_URL}/api/viewer/note/${id}?token=${token}`);
       } else {
         const access = await checkAccess('note', id);
         setHasAccess(access);
         if (access) {
-          setPdfUrl(`http://localhost:5000/api/viewer/note/${id}?token=${token}`);
+          setPdfUrl(`${import.meta.env.VITE_API_URL}/api/viewer/note/${id}?token=${token}`);
         }
       }
     } catch (error) {

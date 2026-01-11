@@ -1,24 +1,25 @@
 const OTP = require('../models/otpModel');
 const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer'); // Import here to be safe
 
 // Generate 6-digit OTP
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Send email using nodemailer
+// Send email using nodemailer (FIXED TYPO & PORTS)
 const sendEmailViaAPI = async (to, subject, html) => {
   try {
-    const nodemailer = require('nodemailer');
-    
-    const transporter = nodemailer.createTransporter({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT),
-      secure: false,
+    // ✅ FIX 1: createTransport (not createTransporter)
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.hostinger.com',
+      // ✅ FIX 2: Force Port 465 for Hostinger on Cloud Servers
+      port: 465,
+      secure: true, // Must be true for 465
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
+        pass: process.env.EMAIL_PASSWORD // Make sure .env uses EMAIL_PASSWORD (not EMAIL_PASS)
       },
       tls: {
         rejectUnauthorized: false
@@ -26,7 +27,7 @@ const sendEmailViaAPI = async (to, subject, html) => {
     });
 
     await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       to: to,
       replyTo: process.env.EMAIL_REPLY_TO || process.env.EMAIL_USER,
       subject: subject,
@@ -42,8 +43,8 @@ const sendEmailViaAPI = async (to, subject, html) => {
 
 // Get custom email template with OTP
 const getOTPEmailTemplate = (otp, email) => {
-  // ⚠️ REPLACE THESE IMAGE URLS WITH YOUR ACTUAL HOSTED IMAGES
-  const IMAGE_BASE_URL = process.env.EMAIL_IMAGE_BASE_URL || 'https://yourdomain.com/email-assets';
+  // Use frontend URL for assets if image base url is missing
+  const IMAGE_BASE_URL = process.env.EMAIL_IMAGE_BASE_URL || process.env.FRONTEND_URL || 'https://selfwinner.com';
   
   return `<!DOCTYPE html>
 <html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -52,40 +53,29 @@ const getOTPEmailTemplate = (otp, email) => {
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no" />
-  <link href="https://fonts.googleapis.com/css?family=Montserrat:ital,wght@0,400;0,500" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css?family=DM+Sans:ital,wght@0,400;0,600;0,700;0,800" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css?family=Dela+Gothic+One:ital,wght@0,400" rel="stylesheet" />
   <title>SelfWinner - Verify Your Email</title>
   <style>
-    html,body{margin:0!important;padding:0!important;min-height:100%!important;width:100%!important;-webkit-font-smoothing:antialiased}*{-ms-text-size-adjust:100%}table,td,th{mso-table-lspace:0!important;mso-table-rspace:0!important;border-collapse:collapse}img{border:0;outline:0;line-height:100%;text-decoration:none;-ms-interpolation-mode:bicubic}
-    @media (max-width:620px){.pc-sm-hide{display:none!important}.pc-w620-padding-32-20-0-20{padding:32px 20px 0!important}.pc-w620-font-size-40px{font-size:40px!important}.pc-w620-padding-40-20-40-20{padding:40px 20px!important}.pc-w620-font-size-18px{font-size:18px!important}.pc-w620-fontSize-32px{font-size:32px!important}.pc-w620-padding-20-20-30-20{padding:20px 20px 30px!important}}
+    html,body{margin:0!important;padding:0!important;min-height:100%!important;width:100%!important;-webkit-font-smoothing:antialiased}
   </style>
 </head>
-<body class="body" style="width:100%!important;margin:0!important;padding:0!important;mso-line-height-rule:exactly;-webkit-font-smoothing:antialiased;-ms-text-size-adjust:100%;background-color:#f4f4f4">
-  <table class="pc-project-body" align="center" width="100%" border="0" cellspacing="0" cellpadding="0" role="presentation" style="table-layout:fixed">
+<body class="body" style="width:100%!important;margin:0!important;padding:0!important;background-color:#f4f4f4">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="table-layout:fixed">
     <tr>
       <td align="center" valign="top">
-        <table width="600" align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;width:100%;margin:0 auto">
-          <!-- HEADER SECTION -->
+        <table width="600" align="center" border="0" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;margin:0 auto">
           <tr>
             <td valign="top" style="padding:32px 40px 0;background-color:#1679FF;border-radius:16px 16px 0 0">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td align="center" style="padding:0 0 30px">
-                    <table border="0" cellpadding="0" cellspacing="0" role="presentation">
-                      <tr>
-                        <td valign="top">
-                          <!-- Logo - Replace with your actual logo URL -->
-                          <img src="${IMAGE_BASE_URL}/logo.png" width="135" height="63" alt="SelfWinner" style="display:block;border:0;outline:0;line-height:100%;-ms-interpolation-mode:bicubic" />
-                        </td>
-                      </tr>
-                    </table>
+                  <td align="center">
+                    <div style="font-family:Arial,sans-serif;font-size:32px;color:#ffffff;font-weight:bold;">
+                      SelfWinner
+                    </div>
                   </td>
                 </tr>
                 <tr>
-                  <td align="center">
-                    <div style="font-family:'Dela Gothic One',Arial,Helvetica,sans-serif;font-size:48px;line-height:100%;color:#ffffff;font-weight:400;text-align:center;margin:0">
+                  <td align="center" style="padding:20px 0">
+                    <div style="font-family:Arial,sans-serif;font-size:48px;color:#ffffff;font-weight:bold;">
                       Verify Your Email
                     </div>
                   </td>
@@ -94,26 +84,24 @@ const getOTPEmailTemplate = (otp, email) => {
             </td>
           </tr>
 
-          <!-- CONTENT SECTION -->
           <tr>
             <td valign="top" style="padding:40px 40px;background-color:#ffffff">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <div style="font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:20px;line-height:32px;color:#141414;font-weight:400;text-align:center">
+                    <div style="font-family:Arial,sans-serif;font-size:20px;line-height:32px;color:#141414;">
                       Hey there! 👋<br><br>
-                      We've received your signup request. To complete your registration at <strong style="font-weight:700">SelfWinner</strong>, please verify your email address using the code below:
+                      To complete your registration at <strong>SelfWinner</strong>, please verify your email using the code below:
                     </div>
                   </td>
                 </tr>
                 
-                <!-- OTP BOX -->
                 <tr>
                   <td align="center" style="padding:30px 0">
-                    <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="background-color:#1679FF;border-radius:12px;padding:24px 0">
+                    <table border="0" cellpadding="0" cellspacing="0" style="background-color:#1679FF;border-radius:12px;padding:24px 40px">
                       <tr>
-                        <td align="center" style="padding:0 40px">
-                          <div style="font-family:'Dela Gothic One',Arial,Helvetica,sans-serif;font-size:48px;line-height:48px;color:#ffffff;font-weight:400;text-align:center;letter-spacing:8px">
+                        <td align="center">
+                          <div style="font-family:monospace;font-size:48px;color:#ffffff;font-weight:bold;letter-spacing:8px">
                             ${otp}
                           </div>
                         </td>
@@ -124,16 +112,8 @@ const getOTPEmailTemplate = (otp, email) => {
 
                 <tr>
                   <td align="center">
-                    <div style="font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:18px;line-height:28px;color:#141414;font-weight:400;text-align:center">
-                      This code will expire in <strong style="font-weight:700;color:#1679FF">10 minutes</strong>. Please enter it on the verification page to complete your signup.
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td style="padding:30px 0 0">
-                    <div style="font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:16px;line-height:24px;color:#666666;font-weight:400;text-align:center">
-                      If you didn't request this code, you can safely ignore this email. Someone might have typed your email address by mistake.
+                    <div style="font-family:Arial,sans-serif;font-size:16px;color:#666666;">
+                      This code will expire in 10 minutes.
                     </div>
                   </td>
                 </tr>
@@ -141,71 +121,16 @@ const getOTPEmailTemplate = (otp, email) => {
             </td>
           </tr>
 
-          <!-- FOOTER SECTION -->
           <tr>
-            <td valign="top" style="padding:36px 16px 16px;background-color:#141414;border-radius:0 0 16px 16px">
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" role="presentation">
+            <td valign="top" style="padding:36px 16px;background-color:#141414;border-radius:0 0 16px 16px">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center">
-                    <div style="font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:20px;line-height:28px;color:#ffffff;font-weight:700;text-align:center">
+                    <div style="font-family:Arial,sans-serif;font-size:20px;color:#ffffff;font-weight:bold">
                       SelfWinner
                     </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td align="center" style="padding:8px 0">
-                    <div style="font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:16px;line-height:24px;color:#B8B8B8;font-weight:400;text-align:center">
+                    <div style="font-family:Arial,sans-serif;font-size:14px;color:#B8B8B8;margin-top:10px">
                       Your trusted platform for academic excellence
-                    </div>
-                  </td>
-                </tr>
-                
-                <!-- Social Icons (Optional - Replace with your actual social media icons) -->
-                <tr>
-                  <td align="center" style="padding:20px 0">
-                    <table border="0" cellpadding="0" cellspacing="0" role="presentation">
-                      <tr>
-                        <td style="padding:0 8px">
-                          <a href="https://facebook.com/selfwinner" target="_blank">
-                            <img src="${IMAGE_BASE_URL}/facebook-icon.png" width="18" height="18" alt="Facebook" style="display:block;border:0" />
-                          </a>
-                        </td>
-                        <td style="padding:0 8px">
-                          <a href="https://twitter.com/selfwinner" target="_blank">
-                            <img src="${IMAGE_BASE_URL}/twitter-icon.png" width="18" height="18" alt="Twitter" style="display:block;border:0" />
-                          </a>
-                        </td>
-                        <td style="padding:0 8px">
-                          <a href="https://instagram.com/selfwinner" target="_blank">
-                            <img src="${IMAGE_BASE_URL}/instagram-icon.png" width="18" height="18" alt="Instagram" style="display:block;border:0" />
-                          </a>
-                        </td>
-                        <td style="padding:0 8px">
-                          <a href="https://linkedin.com/company/selfwinner" target="_blank">
-                            <img src="${IMAGE_BASE_URL}/linkedin-icon.png" width="18" height="18" alt="LinkedIn" style="display:block;border:0" />
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td align="center" style="padding:20px 0 0">
-                    <div style="font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:12px;line-height:16.8px;color:#B8B8B8;font-weight:400;text-align:center">
-                      Want to change which emails you receive from us? You can 
-                      <a href="${process.env.FRONTEND_URL}/preferences" style="color:#1679FF;text-decoration:underline">update your preferences</a> or 
-                      <a href="${process.env.FRONTEND_URL}/unsubscribe?email=${encodeURIComponent(email)}" style="color:#1679FF;text-decoration:underline">unsubscribe</a>.
-                    </div>
-                  </td>
-                </tr>
-
-                <tr>
-                  <td align="center" style="padding:20px 0 0">
-                    <div style="font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:12px;line-height:16.8px;color:#666666;font-weight:400;text-align:center">
-                      © ${new Date().getFullYear()} SelfWinner. All rights reserved.<br>
-                      <a href="${process.env.FRONTEND_URL}/privacy" style="color:#1679FF;text-decoration:none">Privacy Policy</a> · 
-                      <a href="${process.env.FRONTEND_URL}/terms" style="color:#1679FF;text-decoration:none">Terms of Service</a>
                     </div>
                   </td>
                 </tr>
@@ -262,6 +187,7 @@ exports.sendOTP = async (req, res) => {
     const emailHTML = getOTPEmailTemplate(otp, email);
 
     try {
+      // Use the internal function
       await sendEmailViaAPI(email, '🔐 Verify Your SelfWinner Account', emailHTML);
       console.log('✅ OTP email sent successfully!\n');
       
@@ -271,8 +197,7 @@ exports.sendOTP = async (req, res) => {
       });
     } catch (emailError) {
       console.error('❌ Email failed:', emailError.message);
-      console.log('💡 OTP (for testing):', otp, '\n');
-      
+      // Fallback for debugging
       res.status(500).json({
         success: false,
         message: 'Failed to send email. Please try again.',
@@ -371,7 +296,6 @@ exports.resendOTP = async (req, res) => {
       res.status(200).json({ success: true, message: 'New OTP sent!' });
     } catch (emailError) {
       console.error('❌ Email failed:', emailError.message);
-      console.log('💡 OTP:', otp, '\n');
       res.status(500).json({ success: false, message: 'Failed to send', debug: otp });
     }
 

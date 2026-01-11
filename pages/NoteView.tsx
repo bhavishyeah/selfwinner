@@ -46,12 +46,12 @@ const NoteView: React.FC = () => {
       if (noteData?.price === 0) {
         setHasAccess(true);
         // Set PDF URL for free notes
-        setPdfUrl(`http://localhost:5000/api/viewer/note/${id}?token=${token}`);
+        setPdfUrl(`${import.meta.env.VITE_API_URL}/api/viewer/note/${id}?token=${token}`);
       } else if (isAuthenticated) {
         const access = await checkAccess('note', id);
         setHasAccess(access);
         if (access) {
-          setPdfUrl(`http://localhost:5000/api/viewer/note/${id}?token=${token}`);
+          setPdfUrl(`${import.meta.env.VITE_API_URL}/api/viewer/note/${id}?token=${token}`);
         }
       }
     } catch (error) {
@@ -106,7 +106,7 @@ const NoteView: React.FC = () => {
 
             alert('✅ Payment successful! You now have access to this note.');
             setHasAccess(true);
-            setPdfUrl(`http://localhost:5000/api/viewer/note/${id}?token=${token}`);
+            setPdfUrl(`${import.meta.env.VITE_API_URL}/api/viewer/note/${id}?token=${token}`);
             loadNote();
           } catch (error) {
             console.error('Verification error:', error);
