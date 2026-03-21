@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef  } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService.js';
 import axios from 'axios';
@@ -17,6 +17,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+  const googleInitialized = useRef(false);
+
   const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -84,29 +87,39 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
   };
 
   useEffect(() => {
-    const loadGoogleScript = () => {
-      if ((window as any).google) {
-        (window as any).google.accounts.id.initialize({
-          client_id: '284630277115-hvoeq7e5ii3a3cgd7c5n33v754pir6p7.apps.googleusercontent.com',
+    if (!googleClientId) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      const googleObj = (window as any).google;
+      if (!googleObj?.accounts?.id) {
+        return;
+      }
+
+      if (!googleInitialized.current) {
+        googleObj.accounts.id.initialize({
+          client_id: googleClientId,
           callback: handleGoogleLogin
         });
-        const btnContainer = document.getElementById('googleSignInButton');
-        if (btnContainer) {
-          (window as any).google.accounts.id.renderButton(
-            btnContainer,
-            { theme: 'outline', size: 'large', width: '100%', text: isLogin ? 'signin_with' : 'signup_with' }
-          );
-        }
+                googleInitialized.current = true;
       }
-    };
-    const checkGoogleLoaded = setInterval(() => {
-      if ((window as any).google) {
-        loadGoogleScript();
-        clearInterval(checkGoogleLoaded);
+     const btnContainer = document.getElementById('googleSignInButton');
+      if (!btnContainer) {
+        return;
       }
+       btnContainer.innerHTML = '';
+      googleObj.accounts.id.renderButton(btnContainer, {
+        theme: 'outline',
+        size: 'large',
+        width: 380,
+        text: isLogin ? 'signin_with' : 'signup_with'
+      });
+
+      window.clearInterval(intervalId);
     }, 100);
-    return () => clearInterval(checkGoogleLoaded);
-  }, [isLogin]);
+     return () => window.clearInterval(intervalId);
+  }, [isLogin, googleClientId]);
 
   return (
     <div className="min-h-screen flex bg-white overflow-hidden font-sans">
@@ -143,20 +156,24 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
               </button>
             </div>
 
+            {googleClientId ? (
             <div className="w-full flex justify-center">
               <div id="googleSignInButton" className="w-full"></div>
             </div>
-
+ ) : (
+              <p className="text-xs text-center text-gray-500">
+                Google sign-in is unavailable: missing <code>VITE_GOOGLE_CLIENT_ID</code>.
+              </p>
+            )}
               <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
-              </div>
-           <div className="relative flex justify-center text-sm">
+            </div>
+ <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">Or continue with email</span>
               </div>
             </div>
           </>
-
           {error && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
               <div className="flex">
