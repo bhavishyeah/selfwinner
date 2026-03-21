@@ -13,10 +13,33 @@ dotenv.config({ path: '../.env' });
 connectDB();
 
 const app = express();
+const defaultAllowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+];
+
+const configuredOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean)
+  .filter((value) => /^https?:\/\//i.test(value));
+
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...configuredOrigins])];
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+    // Allow server-to-server calls and non-browser tools (no Origin header)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true
 }));
 app.use(express.json());
