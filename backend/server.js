@@ -30,7 +30,6 @@ const bundleRoutes = require('./routes/bundleRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const viewerRoutes = require('./routes/viewerRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const otpRoutes = require('./routes/otpRoutes');              // ← ADD HERE
 const googleAuthRoutes = require('./routes/googleAuthRoutes'); 
 // Mount routes
 app.use('/api/auth', authRoutes);
@@ -40,7 +39,6 @@ app.use('/api/bundles', bundleRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/viewer', viewerRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/otp', otpRoutes); 
 app.use('/api/auth/google', googleAuthRoutes);
 // Health check
 app.get('/api/health', (req, res) => {

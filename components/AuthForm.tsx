@@ -17,113 +17,26 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // OTP state
-  const [showOTP, setShowOTP] = useState(false);
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [otpLoading, setOtpLoading] = useState(false);
-  
   const navigate = useNavigate();
 
-  // --- (Keep all your existing handler functions: handleOtpChange, handleSendOTP, handleLogin, etc.) ---
-  // ... [Previous logic remains exactly the same] ...
-  // For brevity, I am assuming the logic handlers are here. 
-
-  // Handle OTP input
-  const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) value = value[0];
-    if (!/^\d*$/.test(value)) return;
-
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').slice(0, 6);
-    if (!/^\d+$/.test(pastedData)) return;
-    const newOtp = pastedData.split('').concat(Array(6).fill('')).slice(0, 6);
-    setOtp(newOtp);
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`);
-      prevInput?.focus();
-    }
-  };
-
-  const handleSendOTP = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
     setLoading(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/otp/send`, {
-        email,
-        password,
-        name: name || email.split('@')[0]
-      });
-      if (response.data.success) {
-        setSuccess('OTP sent to your email! Please check your inbox.');
-        setShowOTP(true);
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to send OTP');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    const otpCode = otp.join('');
-    if (otpCode.length !== 6) {
-      setError('Please enter complete OTP');
-      return;
-    }
-    setError('');
-    setOtpLoading(true);
-    try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/otp/verify`, {
-        email,
-        otp: otpCode
-      });
-      if (response.data.success) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+     const response = await authService.register({ email, password });
+      if (response.success) {
         setSuccess('Account created successfully! 🎉');
         if (onLoginSuccess) onLoginSuccess();
         setTimeout(() => {
           navigate('/profile-setup');
-        }, 1000);
+        }, 500);
+      } else {
+        setError(response.message || 'Registration failed');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid OTP');
-      setOtp(['', '', '', '', '', '']);
-      document.getElementById('otp-0')?.focus();
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleResendOTP = async () => {
-    setError('');
-    setSuccess('');
-    setLoading(true);
-    try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/otp/resend`, { email });
-      if (response.data.success) {
-        setSuccess('New OTP sent to your email!');
-        setOtp(['', '', '', '', '', '']);
-        document.getElementById('otp-0')?.focus();
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to resend OTP');
+    setError(err.response?.data?.message || err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -179,10 +92,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
         });
         const btnContainer = document.getElementById('googleSignInButton');
         if (btnContainer) {
-            (window as any).google.accounts.id.renderButton(
-              btnContainer,
-              { theme: 'outline', size: 'large', width: '100%', text: isLogin ? 'signin_with' : 'signup_with' }
-            );
+          (window as any).google.accounts.id.renderButton(
+            btnContainer,
+            { theme: 'outline', size: 'large', width: '100%', text: isLogin ? 'signin_with' : 'signup_with' }
+          );
         }
       }
     };
@@ -197,61 +110,52 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen flex bg-white overflow-hidden font-sans">
-      
-      {/* --- LEFT SIDE: AUTH FORM --- */}
+     
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-16 z-10 bg-white">
         <div className="max-w-md w-full space-y-8">
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              {showOTP ? 'Verify Your Email' : (isLogin ? 'Sign in to SelfWinner' : 'Join SelfWinner Today')}
-            </h2>
+              {isLogin ? 'Sign in to SelfWinner' : 'Join SelfWinner Today'}            </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              {showOTP 
-                ? `We sent a 6-digit code to ${email}` 
-                : (isLogin ? "Welcome back! Let's get learning." : "Start your journey to academic excellence.")
-              }
+               {isLogin ? "Welcome back! Let's get learning." : 'Start your journey to academic excellence.'}
             </p>
           </div>
 
-          {!showOTP && (
-            <>
-              {/* Toggle Login/Register */}
-              <div className="flex justify-center space-x-1 bg-gray-100 p-1 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => { setIsLogin(true); setError(''); setSuccess(''); }}
-                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    isLogin ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-900'
-                  }`}
-                >
-                  Login
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setIsLogin(false); setError(''); setSuccess(''); }}
-                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    !isLogin ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-900'
-                  }`}
-                >
-                  Register
-                </button>
-              </div>
+           <>
+            <div className="flex justify-center space-x-1 bg-gray-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => { setIsLogin(true); setError(''); setSuccess(''); }}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isLogin ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIsLogin(false); setError(''); setSuccess(''); }}
+                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  !isLogin ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                Register
+              </button>
+            </div>
 
-              {/* Google Sign In Button */}
-              <div className="w-full flex justify-center">
-                <div id="googleSignInButton" className="w-full"></div>
-              </div>
+            <div className="w-full flex justify-center">
+              <div id="googleSignInButton" className="w-full"></div>
+            </div>
 
               <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or continue with email</span>
-                </div>
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
               </div>
-            </>
-          )}
+           <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+              </div>
+            </div>
+          </>
 
           {error && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
@@ -271,60 +175,27 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
             </div>
           )}
 
-          {showOTP ? (
-            /* OTP Verification Form */
-            <div className="space-y-6">
-              <div className="flex justify-center gap-2">
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    id={`otp-${index}`}
-                    type="text"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    onPaste={index === 0 ? handleOtpPaste : undefined}
-                    className="w-12 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:border-primary focus:outline-none transition-colors"
-                  />
-                ))}
-              </div>
-              <button onClick={handleVerifyOTP} disabled={otpLoading || otp.join('').length !== 6} className="w-full py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                {otpLoading ? 'Verifying...' : 'Verify OTP'}
-              </button>
-              <div className="text-center space-y-2">
-                <button type="button" onClick={handleResendOTP} disabled={loading} className="text-sm text-primary hover:text-primary-hover font-medium disabled:opacity-50">Resend OTP</button>
+           <form className="mt-8 space-y-6" onSubmit={isLogin ? handleLogin : handleRegister}>
+            <div className="space-y-4">
+              {!isLogin && (
                 <div>
-                  <button type="button" onClick={() => { setShowOTP(false); setOtp(['', '', '', '', '', '']); setError(''); setSuccess(''); }} className="text-sm text-gray-600 hover:text-gray-900">← Back to signup</button>
+                  <label htmlFor="name" className="sr-only">Name</label>
+                  <input id="name" name="name" type="text" required value={name} onChange={(e) => setName(e.target.value)} className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Name" />
                 </div>
-              </div>
-            </div>
-          ) : (
-            /* Email/Password Form */
-            <form className="mt-8 space-y-6" onSubmit={isLogin ? handleLogin : handleSendOTP}>
-              <div className="space-y-4">
-                {!isLogin && (
-                  <div>
-                    <label htmlFor="name" className="sr-only">Name</label>
-                    <input id="name" name="name" type="text" required value={name} onChange={(e) => setName(e.target.value)} className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Name" />
-                  </div>
-                )}
-                <div>
-                  <label htmlFor="email" className="sr-only">Email address</label>
-                  <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Email address" />
-                </div>
-                <div>
-                  <label htmlFor="password" className="sr-only">Password</label>
-                  <input id="password" name="password" type="password" autoComplete={isLogin ? 'current-password' : 'new-password'} required value={password} onChange={(e) => setPassword(e.target.value)} className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="6 characters password" minLength={6} />
-                </div>
+                 )}
+              <div>
+                <label htmlFor="email" className="sr-only">Email address</label>
+                <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Email address" />
               </div>
               <div>
-                <button type="submit" disabled={loading} className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70 disabled:cursor-not-allowed transition-colors">
-                  {loading ? 'Processing...' : (isLogin ? 'Sign in' : 'Continue with OTP')}
-                </button>
+                 <label htmlFor="password" className="sr-only">Password</label>
+                <input id="password" name="password" type="password" autoComplete={isLogin ? 'current-password' : 'new-password'} required value={password} onChange={(e) => setPassword(e.target.value)} className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="6 characters password" minLength={6} />
               </div>
-            </form>
-          )}
+              <button type="submit" disabled={loading} className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70 disabled:cursor-not-allowed transition-colors">
+                {loading ? 'Processing...' : (isLogin ? 'Sign in' : 'Create account')}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
