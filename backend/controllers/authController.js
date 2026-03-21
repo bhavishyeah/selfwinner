@@ -13,7 +13,7 @@ const generateToken = (userId) => {
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, name } = req.body;
 
     // Validation
     if (!email || !password) {
@@ -36,6 +36,7 @@ exports.register = async (req, res) => {
     const user = await User.create({
       email,
       password,
+      sname: name || email.split('@')[0],
       role: 'student' // Default role
     });
 
