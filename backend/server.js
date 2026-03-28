@@ -1,13 +1,10 @@
-require('dotenv').config(); // ← MUST be the very first line
+const dotenv = require('dotenv');
+dotenv.config(); // ✅ Only once, no path needed
+
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
-
-
-
-// Load env vars
-dotenv.config({ path: '../.env' });
 
 // Connect to database
 connectDB();
