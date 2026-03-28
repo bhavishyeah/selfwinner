@@ -1,10 +1,23 @@
 const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 
+const getJwtSecret = () => {
+  if (process.env.JWT_SECRET) {
+    return process.env.JWT_SECRET;
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn('⚠️ JWT_SECRET is missing. Using temporary development secret.');
+    return 'selfwinner_dev_jwt_secret_change_me';
+  }
+
+  throw new Error('JWT_SECRET is not configured');
+};
+
 // Generate JWT Token
 const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: '7d'
+return jwt.sign({ userId }, getJwtSecret(), {
+      expiresIn: '7d'
   });
 };
 
@@ -57,8 +70,8 @@ exports.register = async (req, res) => {
     console.error('Register error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error registering user',
-      error: error.message
+      message: error.message || 'Error registering user',
+            error: error.message
     });
   }
 };

@@ -2,6 +2,19 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const getJwtSecret = () => {
+  if (process.env.JWT_SECRET) {
+    return process.env.JWT_SECRET;
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn('⚠️ JWT_SECRET is missing. Using temporary development secret.');
+    return 'selfwinner_dev_jwt_secret_change_me';
+  }
+
+  throw new Error('JWT_SECRET is not configured');
+};
+
 const userSchema = new mongoose.Schema({
   isActive: {
   type: Boolean,
@@ -80,8 +93,8 @@ userSchema.methods.generateAuthToken = function() {
       email: this.email,
       role: this.role
     },
-    process.env.JWT_SECRET,
-    { expiresIn: '7d' }
+    getJwtSecret(),  
+      { expiresIn: '7d' }
   );
 };
 
