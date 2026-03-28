@@ -6,8 +6,8 @@ const Bundle = require('../models/bundleModel');
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_dummy',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'dummy_secret'
+  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_SWgTWoVbyiBId5',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'KZg6RO2qHRiSz21C638oy7lg'
 });
 
 console.log('✅ Razorpay initialized with key:', process.env.RAZORPAY_KEY_ID);

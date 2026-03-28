@@ -1,6 +1,6 @@
+require('dotenv').config(); // ← MUST be the very first line
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
 
