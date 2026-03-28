@@ -15,7 +15,9 @@ connectDB();
 const app = express();
 const defaultAllowedOrigins = [
   'http://localhost:5173',
-  'http://127.0.0.1:5173'
+  'http://127.0.0.1:5173',
+  'https://www.selfwinner.com',   // ← add this
+  'https://selfwinner.com' 
 ];
 
 const configuredOrigins = (process.env.FRONTEND_URL || '')
