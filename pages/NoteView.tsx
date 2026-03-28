@@ -28,6 +28,16 @@ const NoteView: React.FC = () => {
     loadNote();
   }, [id]);
 
+useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   const loadNote = async () => {
     if (!id) return;
     
@@ -86,7 +96,7 @@ const NoteView: React.FC = () => {
 
       // Razorpay options
       const options = {
-        key: process.env.RAZORPAY_KEY_ID || 'rzp_test_RyUAuK75ZstvGn', // Use your actual key
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'SelfWinner',

@@ -1,7 +1,18 @@
+@import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0f62fe;
+  --color-primary-dark: #0043ce;
+  --color-secondary: #1e1b4b;
+  --color-accent: #ffb020;
+}
 /* ==========================================
    GOOGLE FONTS IMPORT - MUST BE AT TOP
    ========================================== */
-@import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+
+
 
 /* ==========================================
    CUSTOM ANIMATIONS
