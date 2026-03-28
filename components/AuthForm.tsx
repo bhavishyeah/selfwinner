@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef  } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService.js';
 import axios from 'axios';
@@ -22,50 +22,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
 
   const navigate = useNavigate();
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
-    try {
-     const response = await authService.register({ email, password });
-      if (response.success) {
-        setSuccess('Account created successfully! 🎉');
-        if (onLoginSuccess) onLoginSuccess();
-        setTimeout(() => {
-          navigate('/profile-setup');
-        }, 500);
-      } else {
-        setError(response.message || 'Registration failed');
-      }
-    } catch (err: any) {
-    setError(err.response?.data?.message || err.message || 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const response = await authService.login({ email, password });
-      if (response.success) {
-        if (onLoginSuccess) onLoginSuccess();
-        setTimeout(() => {
-          if (response.user.role === 'admin') window.location.href = '/#/admin';
-          else window.location.href = '/#/dashboard';
-        }, 100);
-      } else {
-        setError(response.message || 'Login failed');
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   const handleGoogleLogin = async (response: any) => {
     try {
@@ -75,11 +32,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
       if (result.data.success) {
         localStorage.setItem('token', result.data.token);
         localStorage.setItem('user', JSON.stringify(result.data.user));
+                setSuccess('Signed in successfully with Google!');
         if (onLoginSuccess) onLoginSuccess();
         setTimeout(() => {
-          if (result.data.user.role === 'admin') window.location.href = '/#/admin';
-          else window.location.href = '/#/dashboard';
-        }, 100);
+          if (result.data.user.role === 'admin') {
+            window.location.href = '/#/admin';
+          } else if (result.data.user.isNewUser) {
+            navigate('/profile-setup');
+          } else {
+            window.location.href = '/#/dashboard';
+          }
+        }, 300);
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Google login failed');
@@ -113,13 +76,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
         theme: 'outline',
         size: 'large',
         width: 380,
-        text: isLogin ? 'signin_with' : 'signup_with'
-      });
+        text: 'signin_with'
+            });
 
       window.clearInterval(intervalId);
     }, 100);
      return () => window.clearInterval(intervalId);
-  }, [isLogin, googleClientId]);
+  }, [googleClientId]);
 
   return (
     <div className="min-h-screen flex bg-white overflow-hidden font-sans">
@@ -128,52 +91,24 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
         <div className="max-w-md w-full space-y-8">
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              {isLogin ? 'Sign in to SelfWinner' : 'Join SelfWinner Today'}            </h2>
+              Continue with Google                   
+              </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-               {isLogin ? "Welcome back! Let's get learning." : 'Start your journey to academic excellence.'}
-            </p>
+              Google-only authentication is enabled for SelfWinner.
+                          </p>
           </div>
 
-           <>
-            <div className="flex justify-center space-x-1 bg-gray-100 p-1 rounded-xl">
-              <button
-                type="button"
-                onClick={() => { setIsLogin(true); setError(''); setSuccess(''); }}
-                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  isLogin ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-900'
-                }`}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                onClick={() => { setIsLogin(false); setError(''); setSuccess(''); }}
-                className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  !isLogin ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-900'
-                }`}
-              >
-                Register
-              </button>
-            </div>
-
-            {googleClientId ? (
+           
+         {googleClientId ? (
             <div className="w-full flex justify-center">
               <div id="googleSignInButton" className="w-full"></div>
             </div>
- ) : (
-              <p className="text-xs text-center text-gray-500">
-                Google sign-in is unavailable: missing <code>VITE_GOOGLE_CLIENT_ID</code>.
-              </p>
-            )}
-              <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-            </div>
- <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with email</span>
-              </div>
-            </div>
-          </>
+           ) : (
+            <p className="text-xs text-center text-gray-500">
+              Google sign-in is unavailable: missing <code>VITE_GOOGLE_CLIENT_ID</code>.
+            </p>
+          )}
+
           {error && (
             <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
               <div className="flex">
@@ -192,27 +127,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
             </div>
           )}
 
-           <form className="mt-8 space-y-6" onSubmit={isLogin ? handleLogin : handleRegister}>
-            <div className="space-y-4">
-              {!isLogin && (
-                <div>
-                  <label htmlFor="name" className="sr-only">Name</label>
-                  <input id="name" name="name" type="text" required value={name} onChange={(e) => setName(e.target.value)} className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Name" />
-                </div>
-                 )}
-              <div>
-                <label htmlFor="email" className="sr-only">Email address</label>
-                <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="Email address" />
-              </div>
-              <div>
-                 <label htmlFor="password" className="sr-only">Password</label>
-                <input id="password" name="password" type="password" autoComplete={isLogin ? 'current-password' : 'new-password'} required value={password} onChange={(e) => setPassword(e.target.value)} className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm" placeholder="6 characters password" minLength={6} />
-              </div>
-              <button type="submit" disabled={loading} className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70 disabled:cursor-not-allowed transition-colors">
-                {loading ? 'Processing...' : (isLogin ? 'Sign in' : 'Create account')}
-              </button>
-            </div>
-          </form>
+          
         </div>
       </div>
 
@@ -248,7 +163,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
                     fontSize: '2rem', 
                     lineHeight: '1.2' 
                 }}>
-                  LEARN SMARTER<br/>NOT HARDER
+                  LEARN SMARTER<br />NOT HARDER
                 </h3>
                 <p className="mt-2 text-sm text-white/60">Access premium notes instantly</p>
                 <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-blue-500/10 to-transparent pointer-events-none"></div>
@@ -269,7 +184,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
                     fontSize: '2rem', 
                     lineHeight: '1.2' 
                 }}>
-                  SECURE<br/>VIEWING
+                  SECURE<br />VIEWING
                 </h3>
                 <p className="mt-2 text-sm text-white/60">Protected content delivery</p>
                 <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-purple-500/10 to-transparent pointer-events-none"></div>
@@ -289,7 +204,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
                     fontSize: '2rem', 
                     lineHeight: '1.2' 
                 }}>
-                  BUILT FOR<br/>STUDENTS
+                  BUILT FOR<br />STUDENTS
                 </h3>
                 <p className="mt-2 text-sm text-white/60">Curated by top performers</p>
                 <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-green-500/10 to-transparent pointer-events-none"></div>
