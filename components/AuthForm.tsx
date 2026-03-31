@@ -26,8 +26,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ onLoginSuccess }) => {
 
   const handleGoogleLogin = async (response: any) => {
     try {
-      const result = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/google/callback`, {
-        credential: response.credential
+const result = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/google/callback`, {
+          credential: response.credential
       });
       if (result.data.success) {
         localStorage.setItem('token', result.data.token);
