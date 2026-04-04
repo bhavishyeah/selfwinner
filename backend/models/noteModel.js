@@ -36,6 +36,10 @@ const noteSchema = new mongoose.Schema({
     type: String,
     required: [true, 'PDF file is required']
   },
+  pdfUrl: {
+  type: String,
+  default: ''
+  },
   status: {
     type: String,
     enum: ['active', 'inactive'],

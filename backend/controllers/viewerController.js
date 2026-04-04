@@ -93,17 +93,18 @@ exports.viewNote = async (req, res) => {
       $inc: { views: 1 }
     });
 
-    // ✅ Redirect to Cloudinary URL
-    if (!note.pdfUrl) {
-      console.log('❌ No Cloudinary URL found for note:', id);
+    // ✅ Build Cloudinary URL from pdfPath
+    if (!note.pdfPath) {
+      console.log('❌ No PDF path found for note:', id);
       return res.status(404).json({
         success: false,
         message: 'PDF file not found'
       });
     }
 
-    console.log('✅ Redirecting to Cloudinary:', note.pdfUrl);
-    res.redirect(note.pdfUrl);
+    const cloudinaryUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/raw/upload/${note.pdfPath}`;
+    console.log('✅ Redirecting to Cloudinary:', cloudinaryUrl);
+    res.redirect(cloudinaryUrl);
 
   } catch (error) {
     console.error('❌ View note error:', error);
