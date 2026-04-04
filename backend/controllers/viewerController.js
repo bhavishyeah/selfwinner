@@ -1,5 +1,3 @@
-const fs = require('fs');
-const path = require('path');
 const jwt = require('jsonwebtoken');
 const Note = require('../models/noteModel');
 const Bundle = require('../models/bundleModel');
@@ -10,7 +8,6 @@ exports.viewNote = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Get token from query parameter
     const token = req.query.token;
     
     console.log('📥 View note request:', { noteId: id, hasToken: !!token });
@@ -23,7 +20,6 @@ exports.viewNote = async (req, res) => {
       });
     }
 
-    // Verify token
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -38,7 +34,6 @@ exports.viewNote = async (req, res) => {
 
     const userId = decoded.userId;
 
-    // Get note
     const note = await Note.findById(id);
     if (!note) {
       console.log('❌ Note not found:', id);
@@ -50,15 +45,12 @@ exports.viewNote = async (req, res) => {
 
     console.log('📄 Note found:', note.title, '- Price:', note.price);
 
-    // Check access
     let hasAccess = false;
 
-    // Free notes are accessible to all authenticated users
     if (note.price === 0) {
       hasAccess = true;
       console.log('✅ Free note - access granted');
     } else {
-      // Check if user has purchased
       const purchase = await Purchase.findOne({
         userId,
         itemType: 'note',
@@ -71,7 +63,6 @@ exports.viewNote = async (req, res) => {
         console.log('✅ Purchase found - access granted');
       }
 
-      // Also check if note is in a purchased bundle
       if (!hasAccess) {
         const bundlePurchase = await Purchase.findOne({
           userId,
@@ -102,42 +93,18 @@ exports.viewNote = async (req, res) => {
       $inc: { views: 1 }
     });
 
-    // Stream PDF
-    const filePath = path.join(__dirname, '../uploads/notes', note.pdfPath);
-    console.log('📂 File path:', filePath);
-
-    if (!fs.existsSync(filePath)) {
-      console.log('❌ File not found on disk:', filePath);
+    // ✅ Redirect to Cloudinary URL
+    if (!note.pdfUrl) {
+      console.log('❌ No Cloudinary URL found for note:', id);
       return res.status(404).json({
         success: false,
         message: 'PDF file not found'
       });
     }
 
-    const stat = fs.statSync(filePath);
-    const fileSize = stat.size;
+    console.log('✅ Redirecting to Cloudinary:', note.pdfUrl);
+    res.redirect(note.pdfUrl);
 
-    console.log('✅ Streaming PDF:', note.pdfPath, '- Size:', fileSize, 'bytes');
-
-    // Set headers for PDF streaming
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Length', fileSize);
-    res.setHeader('Content-Disposition', 'inline; filename="' + note.title + '.pdf"');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-
-    // Stream the file
-    const readStream = fs.createReadStream(filePath);
-    readStream.pipe(res);
-
-    readStream.on('error', (error) => {
-      console.error('❌ Stream error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error streaming file'
-      });
-    });
   } catch (error) {
     console.error('❌ View note error:', error);
     res.status(500).json({
@@ -152,18 +119,15 @@ exports.getAccessibleNotes = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Get all purchases
     const purchases = await Purchase.find({
       userId,
       status: 'completed'
     });
 
-    // Get note IDs from purchases
     const noteIds = purchases
       .filter(p => p.itemType === 'note')
       .map(p => p.itemId);
 
-    // Get notes from bundle purchases
     const bundlePurchases = purchases
       .filter(p => p.itemType === 'bundle');
 
@@ -174,11 +138,10 @@ exports.getAccessibleNotes = async (req, res) => {
       }
     }
 
-    // Get all notes
     const notes = await Note.find({
       $or: [
         { _id: { $in: noteIds } },
-        { price: 0 } // Include free notes
+        { price: 0 }
       ]
     });
 
