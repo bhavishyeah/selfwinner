@@ -10,6 +10,7 @@ interface HomeProps {
 
 const Home: React.FC<HomeProps> = ({ user }) => {
     const navigate = useNavigate();
+    const searchInputRef = useRef<HTMLInputElement | null>(null);
 
     // Data State
     const [notes, setNotes] = useState<Note[]>([]);
@@ -102,6 +103,15 @@ const Home: React.FC<HomeProps> = ({ user }) => {
         setFilter(prev => ({ ...prev, [key]: value }));
     };
 
+    // FIX: Added the missing focusSearchBar function
+    const focusSearchBar = () => {
+        if (searchInputRef.current) {
+            searchInputRef.current.focus();
+            // Optional smooth scrolling if the search bar is lower on the page
+            searchInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
     return (
         <div className="font-body overflow-x-hidden min-h-screen flex flex-col selection:bg-primary selection:text-white bg-white">
             
@@ -182,15 +192,13 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                     </p>
                     
                     <div className="reveal delay-300 opacity-0 flex gap-4 justify-center w-full">
-                        <button onClick={() => document.getElementById('notes-section')?.scrollIntoView({ behavior: 'smooth'})} className="flex min-w-[180px] h-14 items-center justify-center rounded-xl bg-primary text-white text-lg font-bold shadow-xl shadow-primary/30 hover:shadow-2xl hover:bg-primary-hover hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-300">
-                            Find Notes
+                        <button onClick={focusSearchBar} className="flex min-w-[180px] h-14 items-center justify-center rounded-xl bg-primary text-white text-lg font-bold shadow-xl shadow-primary/30 hover:shadow-2xl hover:bg-primary-hover hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-300">                            Find Notes
                         </button>
                         <button onClick={() => navigate('/auth')} className="flex min-w-[180px] h-14 items-center justify-center rounded-xl bg-white border-2 border-primary text-primary text-lg font-bold shadow-md hover:shadow-lg hover:bg-slate-50 hover:-translate-y-1 transition-all duration-300">
                             Join Free
                         </button>
                     </div>
                 </div>
-
 
                 {/* =====================================================================================
                     2. MOBILE & TABLET HERO SECTION 
@@ -214,16 +222,9 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                     </div>
 
                     {/* 3. Rupee: Bottom Right corner - FIXED VISIBILITY */}
-                    {/* Changed bottom-[-170%] to -bottom-10 so it is actually visible */}
                     <div className="reveal-pop delay-300 absolute bottom-[-170%] right-[-10px] h-[200px] opacity-90 pointer-events-none z-10">
                         <img src="/images/rupeelandpg.png" alt="Rupee" className="w-full h-full object-contain" />
                     </div>
-
-
-
-
-
-
 
                     {/* Mobile Content */}
                     <div className="z-10 relative">
@@ -241,8 +242,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                         </p>
 
                         <div className="reveal delay-200 flex flex-col w-full gap-3 px-2">
-                            <button onClick={() => document.getElementById('notes-section')?.scrollIntoView({ behavior: 'smooth'})} className="flex w-full h-12 items-center justify-center rounded-xl bg-primary text-white text-base font-bold shadow-lg">
-                                Find Notes
+                            <button onClick={focusSearchBar} className="flex w-full h-12 items-center justify-center rounded-xl bg-primary text-white text-base font-bold shadow-lg">                                Find Notes
                             </button>
                             <button onClick={() => navigate('/auth')} className="flex w-full h-12 items-center justify-center rounded-xl bg-white border border-primary text-primary text-base font-bold shadow-sm">
                                 Join Free
@@ -259,6 +259,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                             <div className="flex-1 flex items-center bg-slate-50 rounded-xl border border-slate-200 h-14 md:h-16 px-4 group-focus-within:border-primary transition-colors focus-within:ring-2 focus-within:ring-primary/20">
                                 <span className="material-symbols-outlined text-primary mr-3 text-2xl">search</span>
                                 <input
+                                    ref={searchInputRef}
                                     className="w-full bg-transparent border-none outline-none text-secondary placeholder-slate-400 font-medium text-base md:text-lg h-full focus:ring-0 p-0"
                                     placeholder="Search for Physics, CS-101, or IIT Delhi..."
                                     type="text"
@@ -266,36 +267,6 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                                     onChange={(e) => updateFilter('search', e.target.value)}
                                 />
                             </div>
-
-                            <div className="hidden md:flex gap-2 items-center pr-2">
-                                <button className="h-10 px-4 rounded-lg bg-white border border-slate-200 text-secondary text-sm font-bold hover:border-primary hover:text-primary transition-all flex items-center gap-2 shadow-sm">
-                                    College <span className="material-symbols-outlined text-[18px]">expand_more</span>
-                                </button>
-                                <button className="h-10 px-4 rounded-lg bg-white border border-slate-200 text-secondary text-sm font-bold hover:border-primary hover:text-primary transition-all flex items-center gap-2 shadow-sm">
-                                    Course <span className="material-symbols-outlined text-[18px]">expand_more</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Mobile Filters */}
-                        <div className="flex md:hidden gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
-                            <select
-                                className="flex-shrink-0 h-10 px-4 rounded-lg bg-white border border-slate-200 text-secondary text-sm font-bold shadow-sm whitespace-nowrap"
-                                value={filter.college}
-                                onChange={(e) => updateFilter('college', e.target.value)}
-                            >
-                                <option value="">All Colleges</option>
-                            </select>
-                            <select
-                                className="flex-shrink-0 h-10 px-4 rounded-lg bg-white border border-slate-200 text-secondary text-sm font-bold shadow-sm whitespace-nowrap"
-                                value={filter.course}
-                                onChange={(e) => updateFilter('course', e.target.value)}
-                            >
-                                <option value="">All Courses</option>
-                                <option value="B.Tech">B.Tech</option>
-                                <option value="B.Sc">B.Sc</option>
-                                <option value="MBA">MBA</option>
-                            </select>
                         </div>
                     </div>
                 </section>
