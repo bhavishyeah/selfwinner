@@ -177,6 +177,13 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
         }
 
         .mobile-scroll::-webkit-scrollbar { width: 0px; }
+        @keyframes hamburgerGlow {
+          0%, 100% { box-shadow: 0 0 0 rgba(59, 130, 246, 0.15), 0 0 0 rgba(168, 85, 247, 0.12); }
+          50% { box-shadow: 0 0 18px rgba(59, 130, 246, 0.35), 0 0 30px rgba(168, 85, 247, 0.25); }
+        }
+        .hamburger-glow {
+          animation: hamburgerGlow 2s ease-in-out infinite;
+        }
       `}</style>
 
       <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-200">
@@ -248,8 +255,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
             </div>
 
             {/* Mobile Menu Toggle Button */}
-            <button onClick={() => setMobileMenuOpen(true)} className="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-              <i className="fas fa-bars text-xl"></i>
+<button onClick={() => setMobileMenuOpen(true)} className="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors hamburger-glow">              <i className="fas fa-bars text-xl"></i>
             </button>
           </div>
         </div>

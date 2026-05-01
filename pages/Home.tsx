@@ -10,7 +10,7 @@ interface HomeProps {
 
 const Home: React.FC<HomeProps> = ({ user }) => {
     const navigate = useNavigate();
-    const searchInputRef = useRef<HTMLInputElement | null>(null);
+    // const searchInputRef = useRef<HTMLInputElement | null>(null);
 
     // Data State
     const [notes, setNotes] = useState<Note[]>([]);
@@ -99,18 +99,18 @@ const Home: React.FC<HomeProps> = ({ user }) => {
         }
     };
 
-    const updateFilter = (key: keyof FilterState, value: string) => {
-        setFilter(prev => ({ ...prev, [key]: value }));
-    };
+    // const updateFilter = (key: keyof FilterState, value: string) => {
+    //     setFilter(prev => ({ ...prev, [key]: value }));
+    // };
 
-    // FIX: Added the missing focusSearchBar function
-    const focusSearchBar = () => {
-        if (searchInputRef.current) {
-            searchInputRef.current.focus();
-            // Optional smooth scrolling if the search bar is lower on the page
-            searchInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    };
+    //  FIX: Added the missing focusSearchBar function
+    // const focusSearchBar = () => {
+    //     if (searchInputRef.current) {
+    //         searchInputRef.current.focus();
+    //          Optional smooth scrolling if the search bar is lower on the page
+    //         searchInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    //     }
+    // };
 
     return (
         <div className="font-body overflow-x-hidden min-h-screen flex flex-col selection:bg-primary selection:text-white bg-white">
@@ -192,9 +192,10 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                     </p>
                     
                     <div className="reveal delay-300 opacity-0 flex gap-4 justify-center w-full">
-                        <button onClick={focusSearchBar} className="flex min-w-[180px] h-14 items-center justify-center rounded-xl bg-primary text-white text-lg font-bold shadow-xl shadow-primary/30 hover:shadow-2xl hover:bg-primary-hover hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-300">                            Find Notes
-                        </button>
-                        <button onClick={() => navigate('/auth')} className="flex min-w-[180px] h-14 items-center justify-center rounded-xl bg-white border-2 border-primary text-primary text-lg font-bold shadow-md hover:shadow-lg hover:bg-slate-50 hover:-translate-y-1 transition-all duration-300">
+                        <button onClick={() => navigate('/notes')} className="flex min-w-[180px] h-14 items-center justify-center rounded-xl bg-primary text-white text-lg font-bold shadow-xl shadow-primary/30 hover:shadow-2xl hover:bg-primary-hover hover:shadow-primary/40 hover:-translate-y-1 transition-all duration-300">
+                            Find Notes
+                        </button>                       
+                         <button onClick={() => navigate('/auth')} className="flex min-w-[180px] h-14 items-center justify-center rounded-xl bg-white border-2 border-primary text-primary text-lg font-bold shadow-md hover:shadow-lg hover:bg-slate-50 hover:-translate-y-1 transition-all duration-300">
                             Join Free
                         </button>
                     </div>
@@ -242,7 +243,8 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                         </p>
 
                         <div className="reveal delay-200 flex flex-col w-full gap-3 px-2">
-                            <button onClick={focusSearchBar} className="flex w-full h-12 items-center justify-center rounded-xl bg-primary text-white text-base font-bold shadow-lg">                                Find Notes
+                            <button onClick={() => navigate('/notes')} className="flex w-full h-12 items-center justify-center rounded-xl bg-primary text-white text-base font-bold shadow-lg">
+                                Find Notes
                             </button>
                             <button onClick={() => navigate('/auth')} className="flex w-full h-12 items-center justify-center rounded-xl bg-white border border-primary text-primary text-base font-bold shadow-sm">
                                 Join Free
@@ -251,7 +253,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                     </div>
                 </div>
 
-                {/* Search Bar */}
+                 {/* Search Bar
                 <section className="reveal px-6 mb-28 w-full">
                     <div className="max-w-4xl mx-auto relative group">
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/40 via-blue-400/40 to-primary/40 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-1000"></div>
@@ -269,7 +271,7 @@ const Home: React.FC<HomeProps> = ({ user }) => {
                             </div>
                         </div>
                     </div>
-                </section>
+                </section>  */}
 
                 {/* Why SelfWinner Section */}
                 <section className="max-w-7xl mx-auto px-6 mb-20">
