@@ -45,6 +45,16 @@ const BundleView: React.FC = () => {
     loadBundle();
   }, [id]);
 
+ useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   const loadBundle = async () => {
     if (!id) return;
 
@@ -98,10 +108,15 @@ const BundleView: React.FC = () => {
     try {
       // Create Razorpay order
       const orderData = await createOrder('bundle', bundle._id);
+if (!window.Razorpay) {
+        alert('❌ Razorpay script not loaded. Please refresh the page.');
+        setPaymentLoading(false);
+        return;
+      }
 
       // Razorpay options
       const options = {
-        key: 'rzp_test_RyUAuK75ZstvGn', // Your actual test key
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'SelfWinner',
@@ -130,12 +145,18 @@ const BundleView: React.FC = () => {
           email: user?.email || '',
         },
         theme: {
-          color: '#7C3AED' // Purple color for bundles
+          color: '#7C3AED' 
+          },
+        modal: {
+          ondismiss: function() {
+            setPaymentLoading(false);
+          }// Purple color for bundles
         }
       };
 
       const razorpay = new window.Razorpay(options);
       razorpay.open();
+            setPaymentLoading(false);
     } catch (error: any) {
       alert('❌ ' + (error.response?.data?.message || 'Payment initiation failed'));
     } finally {
