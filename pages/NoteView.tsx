@@ -58,8 +58,13 @@ useEffect(() => {
         // Set PDF URL for free notes
         setPdfUrl(`${import.meta.env.VITE_API_URL}/api/viewer/note/${id}?token=${token}`);
       } else if (isAuthenticated) {
-        const access = await checkAccess('note', id);
-        setHasAccess(access);
+let access = await checkAccess('note', id);
+
+        // Fallback: if note-level access is false, allow access via purchased bundle
+        if (!access && bundle?._id) {
+          const bundleAccess = await checkAccess('bundle', bundle._id);
+          access = bundleAccess;
+        }        setHasAccess(access);
         if (access) {
           setPdfUrl(`${import.meta.env.VITE_API_URL}/api/viewer/note/${id}?token=${token}`);
         }
