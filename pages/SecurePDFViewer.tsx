@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getNote } from '../services/notesService';
+import { getNote, getBundles } from '../services/notesService';
 import { checkAccess } from '../services/paymentService';
 import authService from '../services/authService';
 
@@ -8,6 +8,7 @@ const SecurePDFViewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [note, setNote] = useState<any>(null);
+    const [relatedBundle, setRelatedBundle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [pdfUrl, setPdfUrl] = useState('');
@@ -163,12 +164,21 @@ startxref
       }
       setNote(noteData);
 
+      const bundles = await getBundles();
+      const bundle = bundles.find((b: any) =>
+        b.noteIds && Array.isArray(b.noteIds) && b.noteIds.some((n: any) => n._id === id || n === id)
+      );
+      setRelatedBundle(bundle);
+
       if (noteData.price === 0) {
         setHasAccess(true);
         setPdfUrl(`${import.meta.env.VITE_API_URL}/api/viewer/note/${id}?token=${token}`);
       } else {
-        const access = await checkAccess('note', id);
-        setHasAccess(access);
+let access = await checkAccess('note', id);
+        if (!access && bundle?._id) {
+          const bundleAccess = await checkAccess('bundle', bundle._id);
+          access = bundleAccess;
+        }        setHasAccess(access);
         if (access) {
           setPdfUrl(`${import.meta.env.VITE_API_URL}/api/viewer/note/${id}?token=${token}`);
         }
