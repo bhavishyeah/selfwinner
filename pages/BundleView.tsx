@@ -113,6 +113,13 @@ const BundleView: React.FC = () => {
     try {
       // Create Razorpay order
 const orderData = await createOrder('bundle', bundle._id, appliedCoupon?.code);
+ const expectedAmountInPaise = Math.round(finalPrice * 100);
+
+      if (appliedCoupon && orderData.amount !== expectedAmountInPaise) {
+        setPaymentLoading(false);
+        alert('⚠️ Coupon could not be applied on server checkout. Please try again after backend deployment sync.');
+        return;
+      }
 if (!window.Razorpay) {
         alert('❌ Razorpay script not loaded. Please refresh the page.');
         setPaymentLoading(false);
@@ -183,8 +190,11 @@ const handleApplyCoupon = async () => {
       setTimeout(() => setShowConfetti(false), 1600);
     } catch (error: any) {
       setAppliedCoupon(null);
-      setCouponMessage(error.response?.data?.message || 'Invalid coupon code');
-    } finally {
+ if (error?.response?.status === 404) {
+        setCouponMessage('Coupon validation API is not deployed yet. Please contact admin to deploy latest backend.');
+      } else {
+        setCouponMessage(error.response?.data?.message || 'Invalid coupon code');
+      }    } finally {
       setCouponLoading(false);
     }
   };

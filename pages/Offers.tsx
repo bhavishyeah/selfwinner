@@ -5,8 +5,8 @@ import CountdownTimer from '../components/CountdownTimer';
 const Offers: React.FC = () => {
   const navigate = useNavigate();
   
-  // Target date: January 7, 2026
-  const targetDate = new Date('2026-01-07T23:59:59');
+  // Target date: May 22, 2026
+  const targetDate = new Date('2026-05-22T23:59:59');
 
   return (
     <div className="font-body overflow-x-hidden min-h-screen flex flex-col bg-background-light">
@@ -125,8 +125,8 @@ const Offers: React.FC = () => {
                    <div className="relative w-[400px] h-[400px] xl:w-[500px] xl:h-[500px]"> 
                       <div className="absolute inset-0 flex items-center justify-center opacity-90 p-3 transform rotate-6 hover:rotate-0 transition-all duration-500">
                         <img 
-                          src="/images/20%offerpg.png"
-                          alt="20% Off Badge" 
+                          src="/images/8%offerpg.png"
+                          alt="8% Off Badge" 
                           className="w-full h-full object-contain drop-shadow-2xl"
                         />
                       </div>
