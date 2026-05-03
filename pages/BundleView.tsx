@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getBundle, getNotes } from '../services/notesService';
-import { createOrder, verifyPayment, checkAccess, validateCoupon } from '../services/paymentService';
+import { createOrder, verifyPayment, checkAccess } from '../services/paymentService';
 import authService from '../services/authService';
 
 declare global {
@@ -183,18 +183,32 @@ const handleApplyCoupon = async () => {
     }
     setCouponLoading(true);
     try {
-      const coupon = await validateCoupon(couponCode);
-      setAppliedCoupon(coupon);
-      setCouponMessage(`🎉 Coupon applied! You unlocked ${coupon.discountPercent}% off.`);
+     if (!isAuthenticated) {
+        navigate('/auth');
+        return;
+      }
+      if (!bundle?._id) return;
+
+      const orderPreview = await createOrder('bundle', bundle._id, couponCode.trim().toUpperCase());
+      const discountedRupees = Math.round(orderPreview.amount / 100);
+      const computedDiscount = basePrice > 0
+        ? Math.max(0, Math.round(((basePrice - discountedRupees) / basePrice) * 100))
+        : 0;
+
+      if (computedDiscount <= 0) {
+        setAppliedCoupon(null);
+        setCouponMessage('This coupon did not apply any discount for this bundle.');
+        return;
+      }
+
+      setAppliedCoupon({ code: couponCode.trim().toUpperCase(), discountPercent: computedDiscount });
+      setCouponMessage(`🎉 Coupon applied! You unlocked ${computedDiscount}% off.`);
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 1600);
     } catch (error: any) {
       setAppliedCoupon(null);
- if (error?.response?.status === 404) {
-        setCouponMessage('Coupon validation API is not deployed yet. Please contact admin to deploy latest backend.');
-      } else {
-        setCouponMessage(error.response?.data?.message || 'Invalid coupon code');
-      }    } finally {
+  setCouponMessage(error.response?.data?.message || 'Invalid coupon code');
+       } finally {
       setCouponLoading(false);
     }
   };
