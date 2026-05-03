@@ -32,6 +32,7 @@ const BundleView: React.FC = () => {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent: number } | null>(null);
+  const [appliedOrderAmount, setAppliedOrderAmount] = useState<number | null>(null);
   const [couponMessage, setCouponMessage] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -125,10 +126,9 @@ const BundleView: React.FC = () => {
     try {
       // Create Razorpay order
 const orderData = await createOrder('bundle', bundle._id, appliedCoupon?.code);
- const expectedAmountInPaise = Math.round(finalPrice * 100);
-
-      if (appliedCoupon && orderData.amount !== expectedAmountInPaise) {
-        setPaymentLoading(false);
+      const expectedAmountInPaise = appliedOrderAmount ?? null;
+ if (appliedCoupon && expectedAmountInPaise !== null && orderData.amount !== expectedAmountInPaise) {
+          setPaymentLoading(false);
         alert('⚠️ Coupon could not be applied on server checkout. Please try again after backend deployment sync.');
         return;
       }
@@ -209,6 +209,7 @@ const handleApplyCoupon = async () => {
 
       if (computedDiscount <= 0) {
           const normalized = couponCode.trim().toUpperCase();
+                  setAppliedOrderAmount(null);
         if (knownCouponDiscounts[normalized]) {
           setCouponMessage('Coupon is valid, but your deployed backend is not applying discount yet. Please redeploy backend payment controller.');
           return;
@@ -219,11 +220,13 @@ const handleApplyCoupon = async () => {
       }
 
       setAppliedCoupon({ code: couponCode.trim().toUpperCase(), discountPercent: computedDiscount });
+            setAppliedOrderAmount(orderPreview.amount);
       setCouponMessage(`🎉 Coupon applied! You unlocked ${computedDiscount}% off.`);
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 1600);
     } catch (error: any) {
       setAppliedCoupon(null);
+            setAppliedOrderAmount(null);
   setCouponMessage(error.response?.data?.message || 'Invalid coupon code');
        } finally {
       setCouponLoading(false);
@@ -232,8 +235,9 @@ const handleApplyCoupon = async () => {
 
   const basePrice = bundle?.price || 0;
   const discountPercent = appliedCoupon?.discountPercent || 0;
-  const finalPrice = Math.max(0, Math.round(basePrice * (1 - discountPercent / 100)));
-
+const finalPrice = appliedOrderAmount !== null
+    ? appliedOrderAmount / 100
+    : Math.max(0, basePrice * (1 - discountPercent / 100));
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
