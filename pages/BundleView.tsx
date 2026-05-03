@@ -11,6 +11,18 @@ declare global {
 }
 
 const BundleView: React.FC = () => {
+  const knownCouponDiscounts: Record<string, number> = {
+    SW10A1B2C3D4E5F6: 10, SW10G7H8J9K1L2M3: 10, SW10N4P5Q6R7S8T9: 10, SW10U1V2W3X4Y5Z6: 10, SW107A8B9C1D2E3F: 10,
+    SW10G4H5J6K7L8M9: 10, SW10N1P2Q3R4S5T6: 10, SW10U7V8W9X1Y2Z3: 10, SW104A5B6C7D8E9F: 10, SW10G1H2J3K4L5M6: 10,
+    SW20A1B2C3D4E5F6: 20, SW20G7H8J9K1L2M3: 20, SW20N4P5Q6R7S8T9: 20, SW20U1V2W3X4Y5Z6: 20, SW207A8B9C1D2E3F: 20,
+    SW20G4H5J6K7L8M9: 20, SW20N1P2Q3R4S5T6: 20, SW20U7V8W9X1Y2Z3: 20, SW204A5B6C7D8E9F: 20, SW20G1H2J3K4L5M6: 20,
+    SW30A1B2C3D4E5F6: 30, SW30G7H8J9K1L2M3: 30, SW30N4P5Q6R7S8T9: 30, SW30U1V2W3X4Y5Z6: 30, SW307A8B9C1D2E3F: 30,
+    SW30G4H5J6K7L8M9: 30, SW30N1P2Q3R4S5T6: 30, SW30U7V8W9X1Y2Z3: 30, SW304A5B6C7D8E9F: 30, SW30G1H2J3K4L5M6: 30,
+    SW40A1B2C3D4E5F6: 40, SW40G7H8J9K1L2M3: 40, SW40N4P5Q6R7S8T9: 40, SW40U1V2W3X4Y5Z6: 40, SW407A8B9C1D2E3F: 40,
+    SW40G4H5J6K7L8M9: 40, SW40N1P2Q3R4S5T6: 40, SW40U7V8W9X1Y2Z3: 40, SW404A5B6C7D8E9F: 40, SW40G1H2J3K4L5M6: 40,
+    SW50A1B2C3D4E5F6: 50, SW50G7H8J9K1L2M3: 50, SW50N4P5Q6R7S8T9: 50, SW50U1V2W3X4Y5Z6: 50, SW507A8B9C1D2E3F: 50,
+    SW50G4H5J6K7L8M9: 50, SW50N1P2Q3R4S5T6: 50, SW50U7V8W9X1Y2Z3: 50, SW504A5B6C7D8E9F: 50, SW50G1H2J3K4L5M6: 50
+  };
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [bundle, setBundle] = useState<any>(null);
@@ -196,6 +208,11 @@ const handleApplyCoupon = async () => {
         : 0;
 
       if (computedDiscount <= 0) {
+          const normalized = couponCode.trim().toUpperCase();
+        if (knownCouponDiscounts[normalized]) {
+          setCouponMessage('Coupon is valid, but your deployed backend is not applying discount yet. Please redeploy backend payment controller.');
+          return;
+        }
         setAppliedCoupon(null);
         setCouponMessage('This coupon did not apply any discount for this bundle.');
         return;
