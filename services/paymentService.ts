@@ -22,11 +22,12 @@ export interface Purchase {
 }
 
 class PaymentService {
-  async createOrder(itemType: 'note' | 'bundle', itemId: string): Promise<PaymentOrder> {
-    try {
+ async createOrder(itemType: 'note' | 'bundle', itemId: string, couponCode?: string): Promise<PaymentOrder> {
+      try {
       const response = await api.post('/payments/create-order', {
         itemType,
-        itemId
+        itemId,
+        couponCode
       });
       return response.data.order;
     } catch (error) {
@@ -117,14 +118,22 @@ class PaymentService {
   async getPaymentStatus(orderId: string): Promise<any> {
     return this.checkPaymentStatus(orderId);
   }
+
+async validateCoupon(couponCode: string): Promise<{ code: string; discountPercent: number }> {
+    const response = await api.post('/payments/validate-coupon', { couponCode });
+    return response.data.coupon;
+  }
+
 }
 
 const paymentService = new PaymentService();
 export default paymentService;
 
 // ALL EXPORTS
-export const createOrder = (itemType: 'note' | 'bundle', itemId: string) => 
-  paymentService.createOrder(itemType, itemId);
+export const createOrder = (itemType: 'note' | 'bundle', itemId: string, couponCode?: string) => 
+  paymentService.createOrder(itemType, itemId, couponCode);
+export const validateCoupon = (couponCode: string) =>
+  paymentService.validateCoupon(couponCode);
 export const initiatePayment = (itemType: 'note' | 'bundle', itemId: string) => 
   paymentService.initiatePayment(itemType, itemId);
 export const startPayment = (itemType: 'note' | 'bundle', itemId: string) => 

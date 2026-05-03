@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const Purchase = require('../models/purchaseModel');
 const Note = require('../models/noteModel');
 const Bundle = require('../models/bundleModel');
-
+const { getCouponDiscount } = require('../config/couponCodes');
 // Validate keys on startup
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   throw new Error('❌ Razorpay keys missing from environment variables!');
@@ -21,8 +21,8 @@ console.log('✅ Razorpay initialized with key:', process.env.RAZORPAY_KEY_ID?.s
 exports.createOrder = async (req, res) => {
   try {
     console.log('📥 Create order request:', req.body);
-    const { itemType, itemId } = req.body;
-    const userId = req.user.id;
+    const { itemType, itemId, couponCode } = req.body;
+        const userId = req.user.id;
 
     console.log('User ID:', userId);
     console.log('Item Type:', itemType);
@@ -67,8 +67,14 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    const amountInPaise = Math.round(amount * 100);
-    console.log('💰 Amount in paise:', amountInPaise);
+const discountPercent = getCouponDiscount(couponCode);
+    const discountedAmount = discountPercent > 0
+      ? amount * (1 - discountPercent / 100)
+      : amount;
+
+    const amountInPaise = Math.round(discountedAmount * 100);   
+     console.log('💰 Amount in paise:', amountInPaise);
+
 
     const options = {
       amount: amountInPaise,
@@ -78,7 +84,9 @@ exports.createOrder = async (req, res) => {
         userId,
         itemType,
         itemId,
-        itemTitle
+         itemTitle,
+        couponCode: couponCode ? couponCode.trim().toUpperCase() : '',
+        discountPercent
       }
     };
 
@@ -94,7 +102,11 @@ exports.createOrder = async (req, res) => {
         currency: order.currency,
         itemType,
         itemId,
-        itemTitle
+        itemTitle,
+        couponCode: couponCode ? couponCode.trim().toUpperCase() : '',
+        discountPercent,
+        originalAmount: amount,
+        finalAmount: discountedAmount
       }
     });
   } catch (error) {
@@ -106,6 +118,33 @@ exports.createOrder = async (req, res) => {
     });
   }
 };
+
+exports.validateCoupon = async (req, res) => {
+  try {
+    const { couponCode } = req.body;
+    const normalized = (couponCode || '').trim().toUpperCase();
+    const discountPercent = getCouponDiscount(normalized);
+
+    if (!normalized) {
+      return res.status(400).json({ success: false, message: 'Coupon code is required' });
+    }
+
+    if (!discountPercent) {
+      return res.status(404).json({ success: false, message: 'Invalid coupon code' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      coupon: {
+        code: normalized,
+        discountPercent
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to validate coupon' });
+  }
+};
+
 
 // Verify payment
 exports.verifyPayment = async (req, res) => {

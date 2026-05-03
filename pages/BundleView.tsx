@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getBundle, getNotes } from '../services/notesService';
-import { createOrder, verifyPayment, checkAccess } from '../services/paymentService';
+import { createOrder, verifyPayment, checkAccess, validateCoupon } from '../services/paymentService';
 import authService from '../services/authService';
 
 declare global {
@@ -18,6 +18,11 @@ const BundleView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [owned, setOwned] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent: number } | null>(null);
+  const [couponMessage, setCouponMessage] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const user = authService.getStoredUser();
   const isAuthenticated = authService.isAuthenticated();
@@ -107,7 +112,7 @@ const BundleView: React.FC = () => {
 
     try {
       // Create Razorpay order
-      const orderData = await createOrder('bundle', bundle._id);
+const orderData = await createOrder('bundle', bundle._id, appliedCoupon?.code);
 if (!window.Razorpay) {
         alert('❌ Razorpay script not loaded. Please refresh the page.');
         setPaymentLoading(false);
@@ -163,6 +168,30 @@ if (!window.Razorpay) {
       setPaymentLoading(false);
     }
   };
+
+const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponMessage('Please enter a coupon code.');
+      return;
+    }
+    setCouponLoading(true);
+    try {
+      const coupon = await validateCoupon(couponCode);
+      setAppliedCoupon(coupon);
+      setCouponMessage(`🎉 Coupon applied! You unlocked ${coupon.discountPercent}% off.`);
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 1600);
+    } catch (error: any) {
+      setAppliedCoupon(null);
+      setCouponMessage(error.response?.data?.message || 'Invalid coupon code');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const basePrice = bundle?.price || 0;
+  const discountPercent = appliedCoupon?.discountPercent || 0;
+  const finalPrice = Math.max(0, Math.round(basePrice * (1 - discountPercent / 100)));
 
   if (loading) {
     return (
@@ -264,8 +293,11 @@ if (!window.Razorpay) {
                   <div className="text-purple-200 text-xs uppercase font-bold tracking-widest mb-1">
                     Bundle Price
                   </div>
-                  <div className="text-5xl font-extrabold text-white mb-2">₹{bundle.price}</div>
-                  <div className="text-xs text-purple-200 mb-6">
+ <div className="text-5xl font-extrabold text-white mb-1">₹{finalPrice}</div>
+                  {discountPercent > 0 && (
+                    <div className="text-sm text-purple-100 line-through mb-1">₹{basePrice}</div>
+                  )}
+                                    <div className="text-xs text-purple-200 mb-6">
                     Save {bundleNotes.length > 0 ? Math.round(((bundleNotes.reduce((sum: number, note: any) => sum + note.price, 0) - bundle.price) / bundleNotes.reduce((sum: number, note: any) => sum + note.price, 0)) * 100) : 0}%
                   </div>
                   <button
@@ -275,6 +307,44 @@ if (!window.Razorpay) {
                   >
                     {paymentLoading ? 'Processing...' : 'Buy Bundle Now'}
                   </button>
+                  <div className="mt-4 p-3 rounded-xl bg-white/10 border border-white/20 relative overflow-hidden">
+                    <label className="block text-[11px] uppercase tracking-wider text-purple-100 mb-2 font-bold">Enter coupon code</label>
+                    <div className="flex gap-2">
+                      <input
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="16-char coupon"
+                        maxLength={16}
+                        className="flex-1 rounded-lg bg-white/90 text-purple-900 px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={couponLoading}
+                        className="px-3 py-2 rounded-lg bg-purple-900 text-white text-xs font-bold hover:bg-purple-950 transition disabled:opacity-60"
+                      >
+                        {couponLoading ? '...' : 'Apply'}
+                      </button>
+                    </div>
+                    {couponMessage && (
+                      <p className={`mt-2 text-xs font-semibold ${appliedCoupon ? 'text-green-300' : 'text-red-300'}`}>{couponMessage}</p>
+                    )}
+                    {showConfetti && (
+                      <div className="pointer-events-none absolute inset-0">
+                        {Array.from({ length: 20 }).map((_, i) => (
+                          <span
+                            key={i}
+                            className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full animate-ping"
+                            style={{
+                              background: ['#FDE047', '#A78BFA', '#22D3EE', '#FB7185'][i % 4],
+                              transform: `translate(${Math.cos(i) * 70}px, ${Math.sin(i) * 50}px)`,
+                              animationDuration: `${0.6 + (i % 5) * 0.2}s`
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

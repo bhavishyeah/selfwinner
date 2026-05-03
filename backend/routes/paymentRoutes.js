@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const {
   createOrder,
+    validateCoupon,
   verifyPayment,
   getUserPurchases,
   checkAccess
@@ -10,6 +11,9 @@ const {
 
 // Create payment order
 router.post('/create-order', protect, createOrder);
+
+//Validate coupon
+router.post('/validate-coupon', protect, validateCoupon);
 
 // Verify payment
 router.post('/verify', protect, verifyPayment);
