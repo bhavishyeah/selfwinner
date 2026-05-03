@@ -64,15 +64,19 @@ exports.viewNote = async (req, res) => {
       }
 
       if (!hasAccess) {
-        const bundlePurchase = await Purchase.findOne({
-          userId,
+        const bundlePurchases = await Purchase.find({
+                    userId,
           itemType: 'bundle',
           status: 'completed'
-        }).populate('itemId');
+         }).select('itemId');
 
-        if (bundlePurchase && bundlePurchase.itemId) {
-          const bundle = bundlePurchase.itemId;
-          if (bundle.noteIds && bundle.noteIds.some(noteId => noteId.toString() === id)) {
+        if (bundlePurchases.length > 0) {
+          const bundleIds = bundlePurchases.map((p) => p.itemId);
+          const hasBundleAccess = await Bundle.exists({
+            _id: { $in: bundleIds },
+            noteIds: id
+          });
+          if (hasBundleAccess) {
             hasAccess = true;
             console.log('✅ Note in purchased bundle - access granted');
           }

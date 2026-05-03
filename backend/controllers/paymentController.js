@@ -273,12 +273,27 @@ exports.checkAccess = async (req, res) => {
       }
     }
 
-    const purchase = await Purchase.findOne({
-      userId,
+    let purchase = await Purchase.findOne({      userId,
       itemType,
       itemId,
       status: 'completed'
     });
+ if (!purchase && itemType === 'note') {
+      const bundlePurchases = await Purchase.find({
+        userId,
+        itemType: 'bundle',
+        status: 'completed'
+      }).select('itemId');
+
+      if (bundlePurchases.length > 0) {
+        const bundleIds = bundlePurchases.map((p) => p.itemId);
+        const bundled = await Bundle.exists({
+          _id: { $in: bundleIds },
+          noteIds: itemId
+        });
+        if (bundled) purchase = { _id: 'bundle-access' };
+      }
+    }
 
     console.log('Purchase found:', !!purchase);
 

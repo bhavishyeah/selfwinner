@@ -14,8 +14,12 @@ const purchaseSchema = new mongoose.Schema({
   itemId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    refPath: 'itemType'
+  refPath: 'itemModel'
   },
+  itemModel: {
+    type: String,
+    enum: ['Note', 'Bundle'],
+    required: true  },
   amount: {
     type: Number,
     required: true,
@@ -49,6 +53,13 @@ const purchaseSchema = new mongoose.Schema({
 // Index for faster access checks
 purchaseSchema.index({ userId: 1, itemId: 1, itemType: 1 });
 purchaseSchema.index({ userId: 1, status: 1 });
+
+// Keep model mapping in sync for refPath population
+purchaseSchema.pre('validate', function(next) {
+  if (this.itemType === 'note') this.itemModel = 'Note';
+  if (this.itemType === 'bundle') this.itemModel = 'Bundle';
+  next();
+});
 
 // Static method to check if user has purchased
 purchaseSchema.statics.hasAccess = async function(userId, itemId, itemType) {
