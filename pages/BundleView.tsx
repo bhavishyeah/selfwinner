@@ -201,27 +201,28 @@ const handleApplyCoupon = async () => {
       }
       if (!bundle?._id) return;
 
-      const orderPreview = await createOrder('bundle', bundle._id, couponCode.trim().toUpperCase());
-      const discountedRupees = Math.round(orderPreview.amount / 100);
-      const computedDiscount = basePrice > 0
-        ? Math.max(0, Math.round(((basePrice - discountedRupees) / basePrice) * 100))
-        : 0;
+      const normalized = couponCode.trim().toUpperCase();
+      const orderPreview = await createOrder('bundle', bundle._id, normalized);
+      const expectedDiscount = knownCouponDiscounts[normalized] || 0;
+      const expectedAmountInPaise = Math.round(basePrice * (1 - expectedDiscount / 100) * 100);
 
-      if (computedDiscount <= 0) {
-          const normalized = couponCode.trim().toUpperCase();
-                  setAppliedOrderAmount(null);
-        if (knownCouponDiscounts[normalized]) {
-          setCouponMessage('Coupon is valid, but your deployed backend is not applying discount yet. Please redeploy backend payment controller.');
-          return;
-        }
+      if (!expectedDiscount) {
         setAppliedCoupon(null);
-        setCouponMessage('This coupon did not apply any discount for this bundle.');
+                  setAppliedOrderAmount(null);
+         setCouponMessage('Invalid coupon code');
         return;
       }
 
-      setAppliedCoupon({ code: couponCode.trim().toUpperCase(), discountPercent: computedDiscount });
+      if (orderPreview.amount !== expectedAmountInPaise) {
+        setAppliedCoupon(null);
+setAppliedOrderAmount(null);
+        setCouponMessage('Coupon is valid, but backend amount does not match exact discount logic. Please redeploy/update backend.');       
+         return;
+      }
+
+setAppliedCoupon({ code: normalized, discountPercent: expectedDiscount });
             setAppliedOrderAmount(orderPreview.amount);
-      setCouponMessage(`🎉 Coupon applied! You unlocked ${computedDiscount}% off.`);
+setCouponMessage(`🎉 Coupon applied! You unlocked ${expectedDiscount}% off.`);
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 1600);
     } catch (error: any) {
