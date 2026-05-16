@@ -1,19 +1,19 @@
 const dotenv = require('dotenv');
-dotenv.config(); // ✅ Only once, no path needed
+dotenv.config();
 
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
 
-// Connect to database
+
 connectDB();
 
 const app = express();
 const defaultAllowedOrigins = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  'https://www.selfwinner.com',   // ← add this
+  'https://www.selfwinner.com',
   'https://selfwinner.com' 
 ];
 
@@ -25,20 +25,33 @@ const configuredOrigins = (process.env.FRONTEND_URL || '')
 
 const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...configuredOrigins])];
 
-// Middleware
-app.use(cors({
-    origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+
+  try {
+    const hostname = new URL(origin).hostname;
+    return hostname === 'selfwinner.com' || hostname.endsWith('.selfwinner.com');
+  } catch {
+    return false;
+  }
+};
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) return callback(null, true);
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 204
+};
 
-// ✅ Handle preflight requests for ALL routes
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

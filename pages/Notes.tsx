@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { getNotes } from '../services/notesService';
 import authService from '../services/authService';
+import GoogleAd from '../components/GoogleAd';
+
+const headingFont = { fontFamily: 'Montserrat, sans-serif' };
 
 interface Note {
   _id: string;
@@ -17,6 +21,8 @@ interface Note {
   purchases: number;
 }
 
+type SortOption = 'newest' | 'price-low' | 'price-high';
+
 const Notes: React.FC = () => {
   const navigate = useNavigate();
   const [notes, setNotes] = useState<Note[]>([]);
@@ -27,32 +33,17 @@ const Notes: React.FC = () => {
     semester: '',
     subject: '',
     search: '',
-    sort: 'newest' as 'newest' | 'price-low' | 'price-high',
+    sort: 'newest' as SortOption,
     free: undefined as boolean | undefined
   });
 
   const isAdmin = authService.isAdmin();
 
-  // Animation Observer
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const revealObserver = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('active');
-          }
-        });
-      }, { threshold: 0.1 });
-
-      const revealElements = document.querySelectorAll('.reveal');
-      revealElements.forEach((el) => revealObserver.observe(el));
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
-  }, [loading, notes]);
-
-  useEffect(() => {
-    loadNotes();
+    const delayDebounceFn = setTimeout(() => {
+      loadNotes();
+    }, 400);
+    return () => clearTimeout(delayDebounceFn);
   }, [filters]);
 
   const loadNotes = async () => {
@@ -72,290 +63,234 @@ const Notes: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 overflow-x-hidden">
-      
-      <style>{`
-        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s ease-out; }
-        .reveal.active { opacity: 1; transform: translateY(0); }
-        .reveal-pop { opacity: 0; transform: scale(0.9); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .reveal-pop.active { opacity: 1; transform: scale(1); }
-        .reveal.delay-100 { transition-delay: 0.1s; }
-        .reveal.delay-200 { transition-delay: 0.2s; }
-        
-        /* Floating animation keyframes - Fixed Rotation at 10deg */
-        @keyframes float {
-          0% { transform: translateY(0px) rotate(10deg); }
-          50% { transform: translateY(-20px) rotate(10deg); }
-          100% { transform: translateY(0px) rotate(10deg); }
-        }
-      `}</style>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      {/* Light Background Gradients */}
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_15%_20%,rgba(59,130,246,0.07),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(96,165,250,0.07),transparent_35%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]" />
 
-      <div className="max-w-7xl mx-auto px-4 relative">
-        
-        {/* --- LEFT SIDE: IMAGE BACKGROUND --- */}
-        <div 
-            className="absolute top-[-75%] lg:left-[-71%] pointer-events-none z-0 hidden md:block" 
-            style={{ 
-              width: '1400px', 
-              height: '1400px', 
-              // REMOVED the '4s' delay. Now it's just Duration | Easing | Infinite
-              animation: 'float 7s ease-in-out infinite',
-              // Added will-change for smoother rendering performance
-              willChange: 'transform'
-            }}
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 relative">
+        <div
+          className="absolute top-[-75%] lg:left-[-71%] pointer-events-none z-1 hidden md:block"
+          style={{ width: '1400px', height: '1400px' }}
         >
-          <img 
+          <img
             src="/images/notesnotepg.png"
-            alt="Decoration" 
+            alt="Decoration"
             className="w-full h-full object-contain opacity-100"
           />
         </div>
 
-        {/* --- RIGHT SIDE: CONTENT WRAPPER --- */}
-        <div className="w-full lg:w-[85%] lg:ml-auto relative z-10">
+        {/* Main Container */}
+        <div className="relative z-10 rounded-3xl border border-blue-100 bg-white/90 p-5 shadow-xl shadow-blue-100/60 backdrop-blur-sm sm:p-8">
+          <div className="flex flex-col gap-4 sm:gap-6">
 
-            {/* Header */}
-            <div className="reveal flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-            <div>
-                <h1 className="text-4xl font-bold text-gray-900">Browse Notes</h1>
-                <p className="text-gray-600 mt-2">Find the perfect study materials for your courses</p>
-            </div>
-            <div className="flex gap-3">
+            {/* Header Section */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="mb-2 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-600">
+                  Notes Library
+                </p>
+                <h1 style={headingFont} className="text-2xl font-bold leading-tight text-slate-900 sm:text-4xl">Browse Notes</h1>
+                <h2 style={headingFont} className="mt-2 text-sm font-medium text-slate-500 sm:text-lg">
+                  Mobile-first, premium experience to discover and purchase study material.
+                </h2>
+              </div>
+
+              <div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-2">
                 <button
-                onClick={() => navigate('/bundles')}
-                className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg flex items-center"
+                  onClick={() => navigate('/bundles')}
+                  className="rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-transform hover:scale-[1.02]"
                 >
-                <i className="fas fa-box mr-2"></i>
-                View Bundles
+                  <i className="fas fa-box mr-2" /> View Bundles
                 </button>
                 {isAdmin && (
-                <button
+                  <button
                     onClick={() => navigate('/admin')}
-                    className="bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-lg"
-                >
-                    <i className="fas fa-plus mr-2"></i>
-                    Upload Note
-                </button>
+                    className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                  >
+                    <i className="fas fa-plus mr-2" /> Upload Note
+                  </button>
                 )}
+              </div>
             </div>
-            </div>
 
-            {/* Filters */}
-            <div className="reveal delay-100 bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                {/* Search */}
-                <div className="lg:col-span-2">
+            {/* Filters Section */}
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 <input
-                    type="text"
-                    placeholder="Search notes..."
-                    value={filters.search}
-                    onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  type="text"
+                  placeholder="Search notes..."
+                  value={filters.search}
+                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                  className="xl:col-span-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
-                </div>
-
-                {/* College */}
-                <div>
                 <input
-                    type="text"
-                    placeholder="College"
-                    value={filters.college}
-                    onChange={(e) => setFilters({ ...filters, college: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  type="text"
+                  placeholder="College"
+                  value={filters.college}
+                  onChange={(e) => setFilters({ ...filters, college: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
-                </div>
-
-                {/* Course */}
-                <div>
                 <input
-                    type="text"
-                    placeholder="Course"
-                    value={filters.course}
-                    onChange={(e) => setFilters({ ...filters, course: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  type="text"
+                  placeholder="Course"
+                  value={filters.course}
+                  onChange={(e) => setFilters({ ...filters, course: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
-                </div>
-
-                {/* Semester */}
-                <div>
                 <select
-                    value={filters.semester}
-                    onChange={(e) => setFilters({ ...filters, semester: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  value={filters.semester}
+                  onChange={(e) => setFilters({ ...filters, semester: e.target.value })}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 >
-                    <option value="">All Semesters</option>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                    <option key={sem} value={sem}>
-                        Semester {sem}
-                    </option>
-                    ))}
+                  <option value="">All Semesters</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                    <option key={sem} value={sem}>Semester {sem}</option>
+                  ))}
                 </select>
-                </div>
-            </div>
+              </div>
 
-            {/* Additional Filters */}
-            <div className="flex flex-wrap gap-4 mt-4">
-                {/* Sort */}
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <select
-                value={filters.sort}
-                onChange={(e) => setFilters({ ...filters, sort: e.target.value as any })}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  value={filters.sort}
+                  onChange={(e) => setFilters({ ...filters, sort: e.target.value as SortOption })}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition sm:w-auto focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 >
-                <option value="newest">Newest First</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
+                  <option value="newest">Newest First</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
                 </select>
 
-                {/* Free/Paid Filter */}
-                <div className="flex gap-2">
-                <button
-                    onClick={() => setFilters({ ...filters, free: undefined })}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    filters.free === undefined
-                        ? 'bg-primary text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                >
-                    All
-                </button>
-                <button
-                    onClick={() => setFilters({ ...filters, free: true })}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    filters.free === true
-                        ? 'bg-primary text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                >
-                    Free Only
-                </button>
-                <button
-                    onClick={() => setFilters({ ...filters, free: false })}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    filters.free === false
-                        ? 'bg-primary text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                >
-                    Paid Only
-                </button>
+                <div className="grid grid-cols-3 gap-2 sm:flex">
+                  {[
+                    { label: 'All', value: undefined },
+                    { label: 'Free', value: true },
+                    { label: 'Paid', value: false }
+                  ].map((option) => (
+                    <button
+                      key={option.label}
+                      onClick={() => setFilters({ ...filters, free: option.value as boolean | undefined })}
+                      className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                        filters.free === option.value
+                          ? 'bg-gradient-to-r from-blue-500 to-cyan-400 text-white shadow-md shadow-blue-500/30 border-transparent'
+                          : 'border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
                 </div>
 
-                {/* Clear Filters */}
                 <button
-                onClick={() =>
-                    setFilters({
-                    college: '',
-                    course: '',
-                    semester: '',
-                    subject: '',
-                    search: '',
-                    sort: 'newest',
-                    free: undefined
-                    })
-                }
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+                  onClick={() => setFilters({
+                    college: '', course: '', semester: '', subject: '',
+                    search: '', sort: 'newest', free: undefined
+                  })}
+                  className="text-left text-sm font-semibold text-slate-400 transition hover:text-blue-600"
                 >
-                Clear All
+                  Clear All
                 </button>
+              </div>
             </div>
-            </div>
+
+            {/* ✅ AD 1 — Banner between Filters and Notes Grid */}
+            {!loading && notes.length > 0 && (
+              <div className="w-full rounded-2xl overflow-hidden">
+                <GoogleAd
+                  adSlot="8787206607"
+                  adFormat="auto"
+                  style={{ minHeight: '90px' }}
+                />
+              </div>
+            )}
 
             {/* Notes Grid */}
             {loading ? (
-            <div className="text-center py-12">
-                <div className="text-xl text-gray-600">Loading notes...</div>
-            </div>
-            ) : notes.length === 0 ? (
-            <div className="reveal text-center py-12 bg-white rounded-xl border border-gray-200">
-                <div className="text-gray-400 text-5xl mb-4">
-                <i className="fas fa-inbox"></i>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No notes found</h3>
-                <p className="text-gray-600">Try adjusting your filters or search terms</p>
-            </div>
-            ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {notes.map((note, index) => (
-                <div
-                    key={note._id}
-                    style={{ transitionDelay: `${(index % 6) * 100}ms` }}
-                    className="reveal reveal-pop bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-primary transition-all duration-300 overflow-hidden group"
-                >
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-primary to-blue-600 p-4">
-                    <div className="flex items-center justify-between text-white">
-                        <div className="flex items-center space-x-2">
-                        <i className="fas fa-file-pdf text-2xl"></i>
-                        <span className="font-semibold text-sm">{note.subject}</span>
-                        </div>
-                        {note.price === 0 ? (
-                        <span className="bg-white text-primary px-3 py-1 rounded-full text-xs font-bold">
-                            FREE
-                        </span>
-                        ) : (
-                        <span className="bg-white text-primary px-3 py-1 rounded-full text-xs font-bold">
-                            ₹{note.price}
-                        </span>
-                        )}
-                    </div>
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-5">
-                    <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                        {note.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">{note.description}</p>
-
-                    {/* Info */}
-                    <div className="space-y-2 mb-4">
-                        <div className="flex items-center text-xs text-gray-500">
-                        <i className="fas fa-university w-4"></i>
-                        <span>{note.college}</span>
-                        </div>
-                        <div className="flex items-center text-xs text-gray-500">
-                        <i className="fas fa-graduation-cap w-4"></i>
-                        <span>
-                            {note.course} - Semester {note.semester}
-                        </span>
-                        </div>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-4 pb-4 border-b border-gray-100">
-                        <div className="flex items-center space-x-1">
-                        <i className="fas fa-eye"></i>
-                        <span>{note.views} views</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                        <i className="fas fa-shopping-cart"></i>
-                        <span>{note.purchases} purchases</span>
-                        </div>
-                    </div>
-
-                    {/* Action Button */}
-                    <button
-                        onClick={() => handleViewNote(note._id)}
-                        className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold hover:bg-primary-dark transition-colors shadow-sm"
-                    >
-                        {note.hasAccess ? 'View Note' : note.price === 0 ? 'View Free Note' : 'View & Purchase'}
-                    </button>
-                    </div>
-                </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <div
+                    key={n}
+                    className="h-64 rounded-2xl bg-slate-200 animate-pulse border border-slate-100"
+                  />
                 ))}
-            </div>
+              </div>
+            ) : notes.length === 0 ? (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-10 text-center">
+                <div className="mb-3 text-4xl text-slate-300"><i className="fas fa-inbox" /></div>
+                <h3 className="font-['Montserrat'] text-xl font-bold text-slate-800">No notes found</h3>
+                <p className="mt-1 text-sm text-slate-500">Try adjusting your filters or search terms.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {notes.map((note, index) => (
+                  <React.Fragment key={note._id}>
+
+                    {/* ✅ AD 2 — Full-width banner after every 6th card */}
+                    {index > 0 && index % 6 === 0 && (
+                      <div className="sm:col-span-2 lg:col-span-3">
+                        <GoogleAd
+                          adSlot="8787206607"
+                          adFormat="horizontal"
+                          style={{ minHeight: '90px', borderRadius: '16px', overflow: 'hidden' }}
+                        />
+                      </div>
+                    )}
+
+                    {/* ✅ Note Card — key removed from motion.div (already on Fragment) */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.4, ease: "easeOut" }}
+                      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/50 transition-all duration-300 hover:-translate-y-2 hover:border-blue-300 hover:shadow-blue-500/10"
+                    >
+                      <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 p-4">
+                        <div className="flex items-center justify-between gap-3 text-white">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <i className="fas fa-file-pdf text-xl" />
+                            <span className="truncate text-sm font-semibold">{note.subject}</span>
+                          </div>
+                          <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-blue-700 shadow-sm">
+                            {note.price === 0 ? 'FREE' : `₹${note.price}`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-4 sm:p-5">
+                        <h3 style={headingFont} className="line-clamp-2 text-base font-bold text-slate-900 sm:text-lg">{note.title}</h3>
+                        <p className="mt-2 line-clamp-2 text-sm text-slate-600">{note.description}</p>
+
+                        <div className="mt-4 space-y-2 text-xs text-slate-500">
+                          <div className="flex items-center gap-2"><i className="fas fa-university w-4 text-slate-400" /> {note.college}</div>
+                          <div className="flex items-center gap-2"><i className="fas fa-graduation-cap w-4 text-slate-400" /> {note.course} - Semester {note.semester}</div>
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500">
+                          <span><i className="fas fa-eye mr-1 text-slate-400" /> {note.views} views</span>
+                          <span><i className="fas fa-shopping-cart mr-1 text-slate-400" /> {note.purchases} purchases</span>
+                        </div>
+
+                        <button
+                          onClick={() => handleViewNote(note._id)}
+                          className="mt-4 w-full rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/30 transition hover:opacity-95"
+                        >
+                          {note.hasAccess ? 'View Note' : note.price === 0 ? 'View Free Note' : 'View & Purchase'}
+                        </button>
+                      </div>
+                    </motion.div>
+
+                  </React.Fragment>
+                ))}
+              </div>
             )}
 
             {/* Results Count */}
             {!loading && notes.length > 0 && (
-            <div className="reveal delay-200 text-center mt-8 text-gray-600">
+              <div className="text-center text-sm text-slate-400">
                 Showing {notes.length} note{notes.length !== 1 ? 's' : ''}
-            </div>
+              </div>
             )}
-            
-        </div>
-        {/* End of Content Wrapper */}
 
+          </div>
+        </div>
       </div>
     </div>
   );

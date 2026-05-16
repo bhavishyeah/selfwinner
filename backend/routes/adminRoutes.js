@@ -9,7 +9,18 @@ const {
   deleteUser,
   getStats,
   toggleBan,
-  getAllPurchases
+  getAllPurchases,
+  getAdminNotes,
+  updateAdminNote,
+  getAdminTransactions,
+  getAdminSettings,
+  updateAdminSettings,
+refundTransaction,
+  createAdminNotification,
+getAdminNotifications,
+  getAdminAuditLogs,
+  exportAdminAuditLogsCsv,
+  updateAdminNotification
 } = require('../controllers/adminController');
 
 // All admin routes require authentication + admin role
@@ -50,4 +61,29 @@ router.get('/stats', getStats);
 // @access  Private (Admin only)
 router.get('/purchases', getAllPurchases);
 
+router.get('/notes', getAdminNotes);
+// @route   PATCH /api/admin/notes/:id
+router.patch('/notes/:id', updateAdminNote);
+// @route   GET /api/admin/transactions
+router.get('/transactions', getAdminTransactions);
+// @route   POST /api/admin/transactions/:id/refund
+router.post('/transactions/:id/refund', refundTransaction);
+// @route   GET /api/admin/settings
+router.get('/settings', getAdminSettings);
+// @route   PATCH /api/admin/settings
+router.patch('/settings', updateAdminSettings);
+
 module.exports = router;
+// @route   POST /api/admin/notifications
+router.post('/notifications', createAdminNotification);
+// @route   GET /api/admin/notifications
+router.get('/notifications', getAdminNotifications);
+
+// @route   GET /api/admin/audit-logs
+router.get('/audit-logs', getAdminAuditLogs);
+
+// @route   GET /api/admin/audit-logs/export
+router.get('/audit-logs/export', exportAdminAuditLogsCsv);
+
+// @route   PATCH /api/admin/notifications/:id
+router.patch('/notifications/:id', updateAdminNotification);
